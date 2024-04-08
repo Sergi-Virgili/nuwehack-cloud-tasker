@@ -24,7 +24,7 @@ To start LocalStack, navigate to the directory containing your docker-compose.ym
 docker-compose up -d
 ```
 
-### Initializing Terraform
+## Aplying Terraform Infrastructure
 
 Navigate to the `Terraform` directory where your Terraform configuration files are located, such as `main.tf`, and perform the following steps:
 

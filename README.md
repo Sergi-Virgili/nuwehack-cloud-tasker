@@ -1,55 +1,129 @@
 # NUWE Hack - CLOUD - TERRAFORM
-- **Nombre**: ServlessTasker
-- **Categoría**: Cloud AWS - Terraform
-- **Dificultad**: Medium
-- **IaC**: Terraform
-- **Descripción**: el objetivo de este challenge es crear un sistema de almacenamiento de task y una scheduled task, gestionado a través de una API llamada **TaskAPI**. Para ello se han de crear varios endpoints en la API:
-    - /createtask: 
-        1. El endpoint invoca una lambda llamada **createScheduledTask** que se encarga de insertar la task en DynamoDB. Esta lambda debe recibir a través de la API en formato JSON los campos: **task_name** y **cron_expression**. Además, crear un nuevo campo llamado **task_id** e insertar todo en DynamoDB.
-        2. POST request.
-    - /listtask:
-        1. El endpoint invoca una lambda llamada **listScheduledTask** que se encarga de obtener la información que contiene DynamoDB y mostrarla.
-        2. GET request.
 
-- De forma paralela, habrá que crear una tercera lambda que se ejecute cada minuto usando **EventBridge**. Esta lambda debe llamarse **executeScheduledTask** y el evento **every-minute**. El objetivo de esta lambda es crear un item, a elección del usuario, en un bucket S3 llamado **taskstorage**.
-- La corrección del challenge se realiza de forma automatizada, por lo que cumplir con los objetivos es crucial. Se han dado una serie de nombres y guía de funcionamiento, esto debe respetarse para que se pueda testear el correcto funcionamiento de la infraestructura.
-- Entorno de desarrollo: Localstack. Para que pueda llevarse a cabo la corrección, será necesario desarrollar todo para localstack, puesto que no requiere de claves personales de ningún tipo. Algunos datos a tener en cuenta:
-    - Región: us-east-1
-    - access_key: test
-    - secret_key: test
-- Información adicional: es importante respetar las pautas y guías que se han aportado, puesto que la corrección automática testea el correcto funcionamiento de la infraestructura, dividiendo este funcionamiento en objetivos, desde el más simple hasta el más complejo.
+# ServerlessTasker
 
-## Objetivos
+## Description
 
-1. El archivo main.tf funciona y está listo para `apply`.
-2. Desplegar todos los recursos propuestos.
-3. Hacer API y lambdas completamente funcionales.
-4. EventBridge y tercera lambda completamente funcionales.
+ServerlessTasker is a serverless solution that facilitates task management via an API interface. This project is designed to run locally using LocalStack, providing a complete testing environment for AWS services such as Lambda, DynamoDB, and S3.
 
-## Estructura básica del repositorio
+## Prerequisites
+
+- Docker and Docker Compose
+- AWS CLI, configured to target LocalStack
+- Terraform
+- Python 3.x and `pip`
+- Virtualenv (optional but recommended for Python package management)
+
+## Running LocalStack
+
+LocalStack provides a local development environment that mimics the AWS cloud, allowing you to deploy AWS-like services on your local machine.
+
+To start LocalStack, navigate to the directory containing your docker-compose.yml file and run the following command:
+
 ```bash
-nuwehack-terraform-tasker/
-├── Infraestructure
-│   ├── lambda
-│   │   ├── lambdasample2.py
-│   │   ├── lambdasample.py
-│   │   └── README.md
-│   └── Terraform
-│       ├── main.tf
-│       └── policy.json
-├── README.md
-└── requirements.txt
+docker-compose up -d
 ```
-Debe seguirse siempre la estructura predefinida en el challenge para el correcto funcionamiento de la corrección automática. Esta estructura y los nombres de las lambdas pueden variar, pero siempre seguirá un estándar que no puede ser modificado por el participante.
 
-## Puntuación
+### Initializing Terraform
 
-La puntuación final se dará en función de si se han cumplido los objetivos o no.
+Navigate to the `Terraform` directory where your Terraform configuration files are located, such as `main.tf`, and perform the following steps:
 
-En este caso, el reto estará evaluado sobre 900 puntos que se reparten de la siguiente forma:
+Initialize Terraform:
 
-- Objetivo 1: 225 puntos
-- Objetivo 2: 225 puntos
-- Objetivo 3: 225 puntos
-- Objetivo 4: 225 puntos
+```bash
+terraform init
+```
 
+Apply the Terraform configuration to create the resources in LocalStack using 'dev' stage:
+
+```bash
+terraform apply
+```
+
+Or you can use the following command to create the resources in LocalStack using another stage, such as 'prod':
+
+```bash
+terraform apply -var 'stage=prod'
+```
+
+## API Endpoints
+
+The API provides two endpoints for managing tasks:
+
+### Create Task
+
+#### Endpoint Description
+
+This endpoint is designed for creating a new task. It is accessed through a POST request and accepts a JSON body with two fields: task_name and cron_expression.
+
+#### HTTP Method
+
+`POST`
+
+#### URL
+
+Given the recommended URL structure for LocalStack and API Gateway, the URL might follow this format:
+
+```bash
+http://<api_id>.execute-api.localhost.localstack.cloud:4566/<stage_name>/createtask
+```
+
+Replace <api_id> with your API's ID in LocalStack and <stage_name> with the name of the stage where your API is deployed.
+
+#### Required Body
+
+The request should include a JSON object in the body with the following properties:
+
+task_name: A string representing the name of the task.
+cron_expression: A string representing the cron schedule expression for the task, determining how frequently the task should be executed.
+
+#### Example Body
+
+```json
+{
+  "task_name": "task1",
+  "cron_expression": "0 * * * *"
+}
+```
+
+### List Tasks
+
+#### Endpoint Description
+
+This endpoint offers a way to retrieve a list of all stored tasks. It requires a GET request and does not necessitate any request body, as it aims to return a list of tasks from the DynamoDB table.
+
+#### HTTP Method
+
+`GET`
+
+#### URL
+
+Adhering to the standard URL structure for accessing services via LocalStack, the URL might be:
+
+```bash
+http://<api_id>.execute-api.localhost.localstack.cloud:4566/<stage_name>/listtasks
+```
+
+#### Required Body
+
+No body is required for this request.
+
+#### Response
+
+The response will be a JSON array of tasks, each task object including properties such as task_id, task_name, and cron_expression.
+
+## Scheduled Task
+
+A scheduled task is executed every minute to create an item in the `taskstorage` S3 bucket.
+
+## Cleaning Up
+
+To stop LocalStack and remove all resources, run the following command:
+
+```bash
+terraform destroy
+```
+
+```bash
+docker-compose down
+```
